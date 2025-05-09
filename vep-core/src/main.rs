@@ -2,10 +2,14 @@ use std::fs;
 use std::path::PathBuf;
 use std::env;
 
+use noodles::vcf;
 
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
-}
+//To do. 
+//- Parse CSQ description from header
+//- Get header size
+//- list variants
+//- get all info fields for a select variant
+//- parse csq info fields
 
 fn main()
 {
@@ -50,9 +54,5 @@ fn main()
 mod tests {
     use super::*;
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
+
 }
