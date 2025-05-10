@@ -11,6 +11,8 @@ use vcf::{self, U8Vec, VCFHeader, VCFHeaderLine, VCFReader, VCFRecord};
 //- get all info fields for a select variant - select by id, select by 
 //- parse csq info fields
 
+pub type CSQValue = (String, String);
+
 #[derive(PartialEq, Debug)]
 pub enum Errors
 {
@@ -19,6 +21,7 @@ pub enum Errors
     UnableToParseRecord,
     UnableToReadHeaders,
     UnableToFindCSQHeader,
+    NoCSQValues,
     WIP
 }
 
@@ -71,11 +74,22 @@ pub fn str_to_header(line:&str) -> Result<VCFHeaderLine,Errors>
 
 pub fn str_to_samples(line:&str) -> VCFHeader
 {
-    let l = String::from(line);
+    let l = String::from(&line[1..]); // remove leading #
     let samples:Vec<U8Vec> = l.split('\t').into_iter()
     .map(|s| String::from(s).into_bytes())
     .collect();
     VCFHeader::new(vec![],samples )
+}
+
+pub fn str_to_record_with_header(header:VCFHeader, line:&str) -> Result<VCFRecord, Errors>
+{
+    let mut rec = VCFRecord::new(header);
+    let parse_record = rec.parse_bytes(line.as_bytes(),1);
+    if parse_record.is_ok()
+    {
+        return Ok(rec)
+    }
+    Err(Errors::UnableToParseRecord)  
 }
 
 pub fn str_to_record(samples:&str, line:&str) -> Result<VCFRecord, Errors>
@@ -91,10 +105,39 @@ pub fn str_to_record(samples:&str, line:&str) -> Result<VCFRecord, Errors>
     Err(Errors::UnableToParseRecord)
 }
 
+pub fn get_csq(rec:VCFRecord, csq_headings:&[&str]) -> Result<Vec<CSQValue>,Errors>
+{
+    let has_csq = rec.info(b"CSQ");
+    if let Some(csqs) = has_csq
+    {
+        let mut csq_values:Vec<CSQValue> = Vec::new();
+        for csq in csqs
+        {
+            let csq_str = String::from_utf8_lossy(csq);
+            let csq_columns:Vec<&str> = csq_str.split('|').into_iter().collect();
+            
+            let max = csq_columns.len().min(csq_headings.len());
+            
+            for x in 0..max
+            {
+                csq_values.push(
+                    (String::from(csq_headings[x]), String::from(csq_columns[x]))
+                );
+            }
+        }
+        
+        return Ok(csq_values)
+    }
+    
+    Err(Errors::NoCSQValues)
+}
+
 
 #[cfg(test)]
 mod tests
 {
+    use std::any::Any;
+
     use super::*;
     
     const CSQ_DESC:&str = "Consequence annotations from Ensembl VEP. Format: Allele|Consequence|IMPACT|SYMBOL|Gene|Feature_type|Feature|BIOTYPE|EXON|INTRON|HGVSc|HGVSp|cDNA_position|CDS_position|Protein_position|Amino_acids|Codons|Existing_variation|REF_ALLELE|UPLOADED_ALLELE|DISTANCE|STRAND|FLAGS|SYMBOL_SOURCE|HGNC_ID|MANE|MANE_SELECT|MANE_PLUS_CLINICAL|TSL|APPRIS|SIFT|PolyPhen|AF|AFR_AF|AMR_AF|EAS_AF|EUR_AF|SAS_AF|gnomADe_AF|gnomADe_AFR_AF|gnomADe_AMR_AF|gnomADe_ASJ_AF|gnomADe_EAS_AF|gnomADe_FIN_AF|gnomADe_MID_AF|gnomADe_NFE_AF|gnomADe_REMAINING_AF|gnomADe_SAS_AF|CLIN_SIG|SOMATIC|PHENO|PUBMED|MOTIF_NAME|MOTIF_POS|HIGH_INF_POS|MOTIF_SCORE_CHANGE|TRANSCRIPTION_FACTORS|am_class|am_pathogenicity";
@@ -187,12 +230,23 @@ mod tests
     }
     
     #[test]
+    fn test_str_to_samples()
+    {
+        let header = str_to_samples(SAMPLES);
+        assert_eq!(header.samples().len(), 8);
+        
+        let samples = header.samples();
+        
+        assert_eq!(b"CHROM",samples[0].as_slice());
+        assert_eq!(b"INFO",samples[7].as_slice());
+    }
+    
+    #[test]
     fn test_str_to_record()
     {
-        let rec:&str = "sq0\t1\t.\tA\t.\t.\tPASS\t.";
-        let head:&str = "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO";
-        
-        let parse_record = str_to_record(head, rec);
+        let rec:&str = "sq0\t1\ttest\tA\t.\t.\tPASS\t.";
+
+        let parse_record = str_to_record(SAMPLES, rec);
         
         assert!(parse_record.is_ok());
         
@@ -207,6 +261,56 @@ mod tests
                 record.chromosome,
                 b"sq0"
             );
+            
+            assert_eq!(
+                record.reference,
+                b"A"
+            );
+            
+            assert_eq!(
+                record.id[0].as_slice(),
+                b"test"
+            );
         }
+    }
+    
+    #[test]
+    fn test_get_csq()
+    {
+        let csq_headings_option = csq_desc_to_cols(CSQ_DESC);
+        assert!(csq_headings_option.is_some());
+        
+        if let Some(csq_headings) = csq_headings_option
+        {
+            let csq_slice:Vec<&str> = csq_headings.iter().map(|s| s.as_str()).collect();
+            let parse_record = str_to_record(SAMPLES, CSQ_RECORD);
+            assert!(parse_record.is_ok());
+            
+            if let Ok(record) = parse_record
+            {
+                let csq_value_results = get_csq
+                (
+                    record,
+                    &csq_slice
+                );
+                
+                assert!(csq_value_results.is_ok());
+                
+                if let Ok(csq_values) = csq_value_results
+                {
+                    for (key,value) in csq_values
+                    {
+                        if key == "Consequence"
+                        {
+                            assert_eq!(value, "downstream_gene_variant")
+                        }
+                    }
+                
+                }
+            }
+        
+        }
+        
+        
     }
 }
