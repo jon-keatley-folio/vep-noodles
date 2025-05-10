@@ -2,18 +2,11 @@ use std::fs;
 use std::path::PathBuf;
 use std::env;
 
-use noodles::vcf;
-
-//To do. 
-//- Parse CSQ description from header
-//- Get header size
-//- list variants
-//- get all info fields for a select variant
-//- parse csq info fields
+pub mod vep;
 
 fn main()
 {
-    //Needed to build 
+    //Need to check what mode we are running in
     println!("Just getting started");
     let pwd_result = env::current_dir();
     if let Ok(pwd) = pwd_result
