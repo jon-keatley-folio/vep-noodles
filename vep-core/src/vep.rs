@@ -1,8 +1,7 @@
-use std::default;
+use std::io::{BufReader, Read};
 use std::{path::PathBuf, str::FromStr};
 
-use noodles::vcf::{self, io::reader, Header, Record};
-use noodles::vcf::header::Parser;
+use vcf::{self, U8Vec, VCFHeader, VCFHeaderLine, VCFReader, VCFRecord};
 
 
 //To do. 
@@ -12,6 +11,7 @@ use noodles::vcf::header::Parser;
 //- get all info fields for a select variant - select by id, select by 
 //- parse csq info fields
 
+#[derive(PartialEq, Debug)]
 pub enum Errors
 {
     UnableToOpenVCF,
@@ -47,14 +47,18 @@ pub fn csq_desc_to_cols(desc:&str) -> Option<Vec<String>>
 
 pub fn is_header(line:&str) -> bool
 {
-    line.starts_with("#")
+    line.starts_with("##")
 }
 
-pub fn str_to_header(line:&str) -> Result<Header,Errors>
+pub fn is_samples(line:&str) -> bool
 {
-    //let parser = Parser::builder()
-   
-    let parse_header = Header::from_str(line);
+    line.starts_with("#") && !line.starts_with("##")
+}
+
+pub fn str_to_header(line:&str) -> Result<VCFHeaderLine,Errors>
+{
+    let parse_header= VCFHeaderLine::from_str(line);
+    
     if let Ok(header) = parse_header
     {
         Ok(header)
@@ -65,83 +69,39 @@ pub fn str_to_header(line:&str) -> Result<Header,Errors>
     }
 }
 
-pub fn str_to_record(line:&str) -> Result<Record, Errors>
+pub fn str_to_samples(line:&str) -> VCFHeader
 {
+    let l = String::from(line);
+    let samples:Vec<U8Vec> = l.split('\t').into_iter()
+    .map(|s| String::from(s).into_bytes())
+    .collect();
+    VCFHeader::new(vec![],samples )
+}
+
+pub fn str_to_record(samples:&str, line:&str) -> Result<VCFRecord, Errors>
+{
+    let header = str_to_samples(samples);
     
-    //let parse_record = vcf::Record::default().
+    let mut rec = VCFRecord::new(header);
+    let parse_record = rec.parse_bytes(line.as_bytes(),1);
+    if parse_record.is_ok()
+    {
+        return Ok(rec)
+    }
     Err(Errors::UnableToParseRecord)
 }
 
-
-pub struct VepTools
-{
-    vcf_file:String,
-    header_length:u32,
-    variant_count:u32,
-    csq_columns:Vec<String>,
-}
-
-impl VepTools
-{
-    
-    
-    pub fn from_file(file:&str) -> Result<VepTools,Errors>
-    {
-        let open_vcf_result = vcf::io::reader::Builder::default().build_from_path(file);
-        
-        if let Ok(mut vcf) = open_vcf_result
-        {
-            let mut csq_columns:Vec<String> = vec![];
-            
-            let headers_result = vcf.read_header();
-            if let Ok(headers) = headers_result
-            {
-                for (id,details) in headers.infos()
-                {
-                    if id == "CSQ"
-                    {
-                        let csq_option = csq_desc_to_cols(
-                            details.description()
-                            );
-                        if let Some(csq_c) = csq_option
-                        {
-                            csq_columns = csq_c;
-                        }
-                    }
-                }
-            }
-            else
-            {
-                return Err(Errors::UnableToReadHeaders)
-            }
-            
-            return Ok(VepTools
-            {
-                vcf_file: String::from(file),
-                header_length: 0,
-                variant_count: 0,
-                csq_columns: csq_columns,
-            })
-        }
-        
-        Err(Errors::UnableToOpenVCF)
-    }
-    
-    fn get_csq_columns()
-    {
-        
-    }
-    
-    fn get_counts(&mut self)
-    {
-        
-    }
-}
 
 #[cfg(test)]
 mod tests
 {
     use super::*;
+    
+    const CSQ_DESC:&str = "Consequence annotations from Ensembl VEP. Format: Allele|Consequence|IMPACT|SYMBOL|Gene|Feature_type|Feature|BIOTYPE|EXON|INTRON|HGVSc|HGVSp|cDNA_position|CDS_position|Protein_position|Amino_acids|Codons|Existing_variation|REF_ALLELE|UPLOADED_ALLELE|DISTANCE|STRAND|FLAGS|SYMBOL_SOURCE|HGNC_ID|MANE|MANE_SELECT|MANE_PLUS_CLINICAL|TSL|APPRIS|SIFT|PolyPhen|AF|AFR_AF|AMR_AF|EAS_AF|EUR_AF|SAS_AF|gnomADe_AF|gnomADe_AFR_AF|gnomADe_AMR_AF|gnomADe_ASJ_AF|gnomADe_EAS_AF|gnomADe_FIN_AF|gnomADe_MID_AF|gnomADe_NFE_AF|gnomADe_REMAINING_AF|gnomADe_SAS_AF|CLIN_SIG|SOMATIC|PHENO|PUBMED|MOTIF_NAME|MOTIF_POS|HIGH_INF_POS|MOTIF_SCORE_CHANGE|TRANSCRIPTION_FACTORS|am_class|am_pathogenicity";
+    
+    const CSQ_RECORD:&str = "1	65568	.	A	C	.	.	CSQ=C|downstream_gene_variant|MODIFIER|OR4G11P|ENSG00000240361|Transcript|ENST00000492842.2|transcribed_unprocessed_pseudogene|||||||||||A|A/C|1681|1||HGNC|HGNC:31276||||||||||||||||||||||||||||||||||,C|missense_variant|MODERATE|OR4F5|ENSG00000186092|Transcript|ENST00000641515.2|protein_coding|2/3||||64|4|2|K/Q|Aag/Cag||A|A/C||1||HGNC|HGNC:14825|MANE_Select|NM_001005484.2|||P1|tolerated_low_confidence(0.06)|benign(0)|||||||||||||||||||||||||||,C|downstream_gene_variant|MODIFIER||ENSG00000290826|Transcript|ENST00000642116.1|lncRNA|||||||||||A|A/C|1452|1|||||||||||||||||||||||||||||||||||||,C|downstream_gene_variant|MODIFIER||ENSG00000290826|Transcript|ENST00000832531.1|lncRNA|||||||||||A|A/C|2042|1|||||||||||||||||||||||||||||||||||||";
+    
+    const SAMPLES:&str = "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO";
     
     #[test]
     fn test_csq_disc_to_cols()
@@ -176,9 +136,7 @@ mod tests
     #[test]
     fn test_csq_disc_real_world()
     {
-        let desc="Consequence annotations from Ensembl VEP. Format: Allele|Consequence|IMPACT|SYMBOL|Gene|Feature_type|Feature|BIOTYPE|EXON|INTRON|HGVSc|HGVSp|cDNA_position|CDS_position|Protein_position|Amino_acids|Codons|Existing_variation|REF_ALLELE|UPLOADED_ALLELE|DISTANCE|STRAND|FLAGS|SYMBOL_SOURCE|HGNC_ID|MANE|MANE_SELECT|MANE_PLUS_CLINICAL|TSL|APPRIS|SIFT|PolyPhen|AF|AFR_AF|AMR_AF|EAS_AF|EUR_AF|SAS_AF|gnomADe_AF|gnomADe_AFR_AF|gnomADe_AMR_AF|gnomADe_ASJ_AF|gnomADe_EAS_AF|gnomADe_FIN_AF|gnomADe_MID_AF|gnomADe_NFE_AF|gnomADe_REMAINING_AF|gnomADe_SAS_AF|CLIN_SIG|SOMATIC|PHENO|PUBMED|MOTIF_NAME|MOTIF_POS|HIGH_INF_POS|MOTIF_SCORE_CHANGE|TRANSCRIPTION_FACTORS|am_class|am_pathogenicity";
-        
-        let real_test = csq_desc_to_cols(desc);
+        let real_test = csq_desc_to_cols(CSQ_DESC);
         assert!(real_test.is_some());
         
         if let Some(cols) = real_test
@@ -196,14 +154,59 @@ mod tests
         assert_eq!(is_header("##fileformat=VCFv4.3"),true);
         assert_eq!(is_header("sq0\t1\t.\tA\t.\t.\tPASS\t."),false);
     }
+    
+    #[test]
+    fn test_is_sample()
+    {
+        assert_eq!(is_samples("##fileformat=VCFv4.3"),false);
+        assert_eq!(is_samples(SAMPLES),true);
+    }
 
     #[test]
     fn test_str_to_header()
     {
-        let parse_header = str_to_header("##fileformat=VCFv4.3");
+        let test_header = format!(r#"##INFO=<ID=CSQ,Number=.,Type=String,Description="{}">"#, CSQ_DESC);
+        let parse_header = str_to_header(&test_header);
         
         assert!(parse_header.is_ok());
         
+        if let Ok(header_line) = parse_header
+        {
+            let test_header =VCFHeader::new(vec![header_line], vec![]);
+            
+            let vep = test_header.info(b"CSQ");
+            
+            assert!(vep.is_some());
+            
+            if let Some(vep_meta) = vep
+            {
+                let desc = String::from_utf8_lossy(vep_meta.description);
+                assert_eq!(&desc, CSQ_DESC);
+            }
+        }
+    }
+    
+    #[test]
+    fn test_str_to_record()
+    {
+        let rec:&str = "sq0\t1\t.\tA\t.\t.\tPASS\t.";
+        let head:&str = "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO";
         
+        let parse_record = str_to_record(head, rec);
+        
+        assert!(parse_record.is_ok());
+        
+        if let Ok(record) = parse_record
+        {
+            assert_eq!(
+                record.position,
+                1
+            );
+            
+            assert_eq!(
+                record.chromosome,
+                b"sq0"
+            );
+        }
     }
 }
