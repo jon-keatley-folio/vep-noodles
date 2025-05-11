@@ -4,8 +4,6 @@ use vcf::{self, VCFHeader, VCFHeaderLine, VCFRecord};
 
 pub mod utils;
 
-
-
 pub struct VEPVCF
 {
     samples:Option<String>,

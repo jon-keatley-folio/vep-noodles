@@ -1,0 +1,37 @@
+package component:vepvcf;
+
+interface glue
+{
+    record csq-value {
+        key: string,
+        value: string,
+        }
+    
+    type csq = list<csq-value>;
+    
+    enum vep-vcf-errors
+    {
+        variantfoundbeforeheader,
+        variantfountbeforesamples,
+        unabletogetcsqcols,
+        unabletoaddrecord,
+        unabletoparseheaderline,
+        unabletoaccessheader,
+        outofrange,
+        noerror,
+    }
+    
+    resource vcfvep {
+        constructor();
+        list-variants: func() -> list<string>;
+        get-csq-headings: func(index: u32) -> list<string>;
+        does-record-have-csq: func(index: u32) -> option<bool>;
+        get-csq: func(index: u32) -> result<csq,vep-vcf-errors>;
+        read: func(self: &mut self, line: string) -> result<bool,vep-vcf-errors>;
+    }
+}
+    
+world vepvcf {
+    export glue;
+}
+

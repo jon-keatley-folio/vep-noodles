@@ -1,0 +1,20 @@
+[package]
+name = "vep-wit"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+wit-bindgen-rt = { version = "0.42.1", features = ["bitflags"] }
+witgen = "0.15.0"
+
+[dependencies.vep-core]
+version="*"
+path="../vep-core"
+
+[package.metadata.component]
+package = "component:vepvcf"
+
+[package.metadata.component.dependencies]

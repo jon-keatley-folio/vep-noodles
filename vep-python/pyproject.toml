@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "vep-python"
+version = "0.1.0"
+description = "python wrapper for wasm vep tools"
+authors = ["Jon Keatley <me@jon-keatley.com>"]
+license = "MIT"
+readme = "README.md"
+packages = [{include = "vep_python"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+wasmtime = "^32.0.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
