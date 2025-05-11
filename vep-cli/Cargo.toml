@@ -1,6 +1,10 @@
 [package]
-name = "vep-noodle-cli"
+name = "vep-cli"
 version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+
+[dependencies.vep-core]
+version="*"
+path="../vep-core"

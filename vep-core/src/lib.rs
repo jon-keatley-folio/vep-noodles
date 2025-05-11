@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use vcf::{self, U8Vec, VCFHeader, VCFHeaderLine, VCFRecord};
+use vcf::{self, VCFHeader, VCFHeaderLine, VCFRecord};
 
 pub mod utils;
 
@@ -64,6 +64,13 @@ impl VEPVCF
         }
         
         vars
+    }
+    
+    pub fn get_csq_headings(&self) -> Vec<&str>
+    {
+        let headings:Vec<&str> = self.csq_headings.iter().map(|h| h.as_str()).collect();
+        headings
+        
     }
     
     pub fn does_record_have_csq(&self, index:usize) -> Option<bool>
