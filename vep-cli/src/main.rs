@@ -2,11 +2,8 @@ use std::fs;
 use std::path::PathBuf;
 use std::env;
 
-pub mod vep;
 
-fn main()
-{
-    //Need to check what mode we are running in
+fn main() {
     println!("Just getting started");
     let pwd_result = env::current_dir();
     if let Ok(pwd) = pwd_result
@@ -38,14 +35,4 @@ fn main()
         println!("Unable to get PWD :( ");
     }
     
-
-}
-
-
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-
 }

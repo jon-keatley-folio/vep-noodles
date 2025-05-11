@@ -1,17 +1,8 @@
-use std::io::{BufReader, Read};
-use std::{path::PathBuf, str::FromStr};
 
-use vcf::{self, U8Vec, VCFHeader, VCFHeaderLine, VCFReader, VCFRecord};
+use std::str::FromStr;
+use std::collections::HashMap;
 
-
-//To do. 
-//- Parse CSQ description from header - done
-//- Get header size - on hold
-//- list variants - on hold
-//- get all info fields for a select variant - select by id, select by 
-//- parse csq info fields
-
-pub type CSQValue = (String, String);
+use vcf::{self, U8Vec, VCFHeader, VCFHeaderLine, VCFRecord};
 
 #[derive(PartialEq, Debug)]
 pub enum Errors
@@ -31,12 +22,12 @@ pub fn csq_desc_to_cols(desc:&str) -> Option<Vec<String>>
     if desc.contains(split_target)
     {
         let desc_bit = desc.split("Format: ").last();
-        if let Some(col_str) = desc_bit
+        if let Some(csq_str) = desc_bit
         {
-            if col_str.contains("|")
+            if csq_str.contains("|")
             {
                 return Some(
-                    col_str
+                    csq_str
                     .split("|")
                     .map(|c| String::from(c))
                     .collect()
@@ -105,28 +96,35 @@ pub fn str_to_record(samples:&str, line:&str) -> Result<VCFRecord, Errors>
     Err(Errors::UnableToParseRecord)
 }
 
-pub fn get_csq(rec:VCFRecord, csq_headings:&[&str]) -> Result<Vec<CSQValue>,Errors>
+pub fn get_csq(rec:VCFRecord, csq_headings:&[&str]) -> Result<Vec<HashMap<String,String>>,Errors>
 {
     let has_csq = rec.info(b"CSQ");
     if let Some(csqs) = has_csq
     {
-        let mut csq_values:Vec<CSQValue> = Vec::new();
+        let mut results:Vec<HashMap<String,String>> = Vec::new();
         for csq in csqs
         {
             let csq_str = String::from_utf8_lossy(csq);
-            let csq_columns:Vec<&str> = csq_str.split('|').into_iter().collect();
             
-            let max = csq_columns.len().min(csq_headings.len());
+            let csq_row = csq_str.split(',');
             
-            for x in 0..max
+            for row in csq_row
             {
-                csq_values.push(
-                    (String::from(csq_headings[x]), String::from(csq_columns[x]))
-                );
+                let mut result_row:HashMap<String,String> = HashMap::new();
+                let csq_columns:Vec<&str> = row.split('|').into_iter().collect();
+                let max = csq_columns.len().min(csq_headings.len());
+                
+                for x in 0..max
+                {
+                    result_row.insert(
+                        String::from(csq_headings[x]), String::from(csq_columns[x])
+                    );
+                }
+                results.push(result_row);
             }
         }
         
-        return Ok(csq_values)
+        return Ok(results)
     }
     
     Err(Errors::NoCSQValues)
@@ -136,8 +134,6 @@ pub fn get_csq(rec:VCFRecord, csq_headings:&[&str]) -> Result<Vec<CSQValue>,Erro
 #[cfg(test)]
 mod tests
 {
-    use std::any::Any;
-
     use super::*;
     
     const CSQ_DESC:&str = "Consequence annotations from Ensembl VEP. Format: Allele|Consequence|IMPACT|SYMBOL|Gene|Feature_type|Feature|BIOTYPE|EXON|INTRON|HGVSc|HGVSp|cDNA_position|CDS_position|Protein_position|Amino_acids|Codons|Existing_variation|REF_ALLELE|UPLOADED_ALLELE|DISTANCE|STRAND|FLAGS|SYMBOL_SOURCE|HGNC_ID|MANE|MANE_SELECT|MANE_PLUS_CLINICAL|TSL|APPRIS|SIFT|PolyPhen|AF|AFR_AF|AMR_AF|EAS_AF|EUR_AF|SAS_AF|gnomADe_AF|gnomADe_AFR_AF|gnomADe_AMR_AF|gnomADe_ASJ_AF|gnomADe_EAS_AF|gnomADe_FIN_AF|gnomADe_MID_AF|gnomADe_NFE_AF|gnomADe_REMAINING_AF|gnomADe_SAS_AF|CLIN_SIG|SOMATIC|PHENO|PUBMED|MOTIF_NAME|MOTIF_POS|HIGH_INF_POS|MOTIF_SCORE_CHANGE|TRANSCRIPTION_FACTORS|am_class|am_pathogenicity";
@@ -288,24 +284,26 @@ mod tests
             
             if let Ok(record) = parse_record
             {
-                let csq_value_results = get_csq
+                let csq_results = get_csq
                 (
                     record,
                     &csq_slice
                 );
                 
-                assert!(csq_value_results.is_ok());
+                assert!(csq_results.is_ok());
                 
-                if let Ok(csq_values) = csq_value_results
+                if let Ok(csq) = csq_results
                 {
-                    for (key,value) in csq_values
-                    {
-                        if key == "Consequence"
-                        {
-                            assert_eq!(value, "downstream_gene_variant")
-                        }
-                    }
-                
+                    assert_eq!(csq.len(), 4);
+                    
+                    let csq_row = &csq[0];
+                    let second_csq_row = &csq[1];
+                    
+                    assert_eq!(csq_row.get("Consequence"), Some(&String::from("downstream_gene_variant")));
+                    assert_eq!(second_csq_row.get("Consequence"), Some(&String::from("missense_variant")));
+                    
+                    assert_eq!(csq_row.get("IMPACT"), Some(&String::from("MODIFIER")));
+                    assert_eq!(second_csq_row.get("IMPACT"), Some(&String::from("MODERATE")));
                 }
             }
         
