@@ -39,6 +39,23 @@ pub fn csq_desc_to_cols(desc:&str) -> Option<Vec<String>>
     None
 }
 
+pub fn get_csq_cols_from_header(header:&VCFHeader) -> Option<Vec<String>>
+{ 
+    let has_csq_header = header.info(b"CSQ");
+    if let Some(csq_header) = has_csq_header
+    {
+
+        let desc = String::from_utf8_lossy(csq_header.description);
+        
+        return csq_desc_to_cols(&desc);
+        
+    }
+    else
+    {
+        None
+    }
+}
+
 pub fn is_header(line:&str) -> bool
 {
     line.starts_with("##")
@@ -49,7 +66,7 @@ pub fn is_samples(line:&str) -> bool
     line.starts_with("#") && !line.starts_with("##")
 }
 
-pub fn str_to_header(line:&str) -> Result<VCFHeaderLine,Errors>
+pub fn str_to_headerline(line:&str) -> Result<VCFHeaderLine,Errors>
 {
     let parse_header= VCFHeaderLine::from_str(line);
     
@@ -63,18 +80,23 @@ pub fn str_to_header(line:&str) -> Result<VCFHeaderLine,Errors>
     }
 }
 
-pub fn str_to_samples(line:&str) -> VCFHeader
+pub fn sample_str_to_header(line:&str) -> VCFHeader
+{
+    VCFHeader::new(vec![],str_to_samples(line) )
+}
+
+pub fn str_to_samples(line:&str) -> Vec<U8Vec>
 {
     let l = String::from(&line[1..]); // remove leading #
     let samples:Vec<U8Vec> = l.split('\t').into_iter()
     .map(|s| String::from(s).into_bytes())
     .collect();
-    VCFHeader::new(vec![],samples )
+    samples
 }
 
-pub fn str_to_record_with_header(header:VCFHeader, line:&str) -> Result<VCFRecord, Errors>
+pub fn str_to_record_with_header(header:&VCFHeader, line:&str) -> Result<VCFRecord, Errors>
 {
-    let mut rec = VCFRecord::new(header);
+    let mut rec = VCFRecord::new(header.clone());
     let parse_record = rec.parse_bytes(line.as_bytes(),1);
     if parse_record.is_ok()
     {
@@ -85,7 +107,7 @@ pub fn str_to_record_with_header(header:VCFHeader, line:&str) -> Result<VCFRecor
 
 pub fn str_to_record(samples:&str, line:&str) -> Result<VCFRecord, Errors>
 {
-    let header = str_to_samples(samples);
+    let header = sample_str_to_header(samples);
     
     let mut rec = VCFRecord::new(header);
     let parse_record = rec.parse_bytes(line.as_bytes(),1);
@@ -96,7 +118,7 @@ pub fn str_to_record(samples:&str, line:&str) -> Result<VCFRecord, Errors>
     Err(Errors::UnableToParseRecord)
 }
 
-pub fn get_csq(rec:VCFRecord, csq_headings:&[&str]) -> Result<Vec<HashMap<String,String>>,Errors>
+pub fn get_csq(rec:&VCFRecord, csq_headings:&[&str]) -> Result<Vec<HashMap<String,String>>,Errors>
 {
     let has_csq = rec.info(b"CSQ");
     if let Some(csqs) = has_csq
@@ -200,12 +222,40 @@ mod tests
         assert_eq!(is_samples("##fileformat=VCFv4.3"),false);
         assert_eq!(is_samples(SAMPLES),true);
     }
+    
+    #[test]
+    fn test_get_csq_cols_from_header()
+    {
+        let test_csq = r#"##INFO=<ID=CSQ,Number=.,Type=String,Description="Test Format: One|Two|Three">"#;
+        let parse_headerline = str_to_headerline(&test_csq);
+        
+        assert!(parse_headerline.is_ok());
+        
+        if let Ok(headerline) = parse_headerline
+        {
+            let test_header =VCFHeader::new(vec![headerline], vec![]);
+            
+            let try_csq = get_csq_cols_from_header(&test_header);
+            
+            assert!(try_csq.is_some());
+            
+            if let Some(csq) = try_csq
+            {
+                assert_eq!(csq.len(),3);
+                assert_eq!(csq[0],"One");
+                assert_eq!(csq[1],"Two");
+                assert_eq!(csq[2],"Three");
+                
+            }
+        }
+        
+    }
 
     #[test]
     fn test_str_to_header()
     {
         let test_header = format!(r#"##INFO=<ID=CSQ,Number=.,Type=String,Description="{}">"#, CSQ_DESC);
-        let parse_header = str_to_header(&test_header);
+        let parse_header = str_to_headerline(&test_header);
         
         assert!(parse_header.is_ok());
         
@@ -226,9 +276,17 @@ mod tests
     }
     
     #[test]
+    fn test_str_to_headerline()
+    {
+        let parse_header = str_to_headerline("##fileformat=VCFv4.1");
+        
+        assert!(parse_header.is_ok());
+    }
+    
+    #[test]
     fn test_str_to_samples()
     {
-        let header = str_to_samples(SAMPLES);
+        let header = sample_str_to_header(SAMPLES);
         assert_eq!(header.samples().len(), 8);
         
         let samples = header.samples();
@@ -286,7 +344,7 @@ mod tests
             {
                 let csq_results = get_csq
                 (
-                    record,
+                    &record,
                     &csq_slice
                 );
                 
