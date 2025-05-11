@@ -13,7 +13,14 @@ noodle-vcf uses VCFc4.3 so we had to switch to vcf which not as nice as noodles 
 
 ## Targets
 
-- [ ] wasm cli - part of core
-- [ ] python import
+- [x] wasm cli - part of core
+- [ ] python import - need WIT!
 - [ ] html
 - [ ] web service?
+
+## Links 
+
+- [WIT](https://component-model.bytecodealliance.org/introduction.html)
+- [WIT cheat sheet](https://cosmonic.com/blog/engineering/wit-cheat-sheet)
+- [WASMTIME integration](https://docs.rs/wasmtime/latest/wasmtime/index.html)
+- [wasm-tools](https://github.com/bytecodealliance/wasm-tools)
