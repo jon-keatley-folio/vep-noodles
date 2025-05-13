@@ -316,11 +316,10 @@ pub mod exports {
                 #[allow(non_snake_case)]
                 pub unsafe fn _export_method_vcfvep_get_csq_headings_cabi<
                     T: GuestVcfvep,
-                >(arg0: *mut u8, arg1: i32) -> *mut u8 {
+                >(arg0: *mut u8) -> *mut u8 {
                     #[cfg(target_arch = "wasm32")] _rt::run_ctors_once();
                     let result0 = T::get_csq_headings(
                         unsafe { VcfvepBorrow::lift(arg0 as u32 as usize) }.get(),
-                        arg1 as u32,
                     );
                     let ptr1 = (&raw mut _RET_AREA.0).cast::<u8>();
                     let vec3 = result0;
@@ -424,52 +423,77 @@ pub mod exports {
                     match result0 {
                         Ok(e) => {
                             *ptr1.add(0).cast::<u8>() = (0i32) as u8;
-                            let vec5 = e;
-                            let len5 = vec5.len();
-                            let layout5 = _rt::alloc::Layout::from_size_align_unchecked(
-                                vec5.len() * (4 * ::core::mem::size_of::<*const u8>()),
+                            let vec6 = e;
+                            let len6 = vec6.len();
+                            let layout6 = _rt::alloc::Layout::from_size_align_unchecked(
+                                vec6.len() * (2 * ::core::mem::size_of::<*const u8>()),
                                 ::core::mem::size_of::<*const u8>(),
                             );
-                            let result5 = if layout5.size() != 0 {
-                                let ptr = _rt::alloc::alloc(layout5).cast::<u8>();
+                            let result6 = if layout6.size() != 0 {
+                                let ptr = _rt::alloc::alloc(layout6).cast::<u8>();
                                 if ptr.is_null() {
-                                    _rt::alloc::handle_alloc_error(layout5);
+                                    _rt::alloc::handle_alloc_error(layout6);
                                 }
                                 ptr
                             } else {
                                 ::core::ptr::null_mut()
                             };
-                            for (i, e) in vec5.into_iter().enumerate() {
-                                let base = result5
-                                    .add(i * (4 * ::core::mem::size_of::<*const u8>()));
+                            for (i, e) in vec6.into_iter().enumerate() {
+                                let base = result6
+                                    .add(i * (2 * ::core::mem::size_of::<*const u8>()));
                                 {
-                                    let CsqValue { key: key2, value: value2 } = e;
-                                    let vec3 = (key2.into_bytes()).into_boxed_slice();
-                                    let ptr3 = vec3.as_ptr().cast::<u8>();
-                                    let len3 = vec3.len();
-                                    ::core::mem::forget(vec3);
+                                    let vec5 = e;
+                                    let len5 = vec5.len();
+                                    let layout5 = _rt::alloc::Layout::from_size_align_unchecked(
+                                        vec5.len() * (4 * ::core::mem::size_of::<*const u8>()),
+                                        ::core::mem::size_of::<*const u8>(),
+                                    );
+                                    let result5 = if layout5.size() != 0 {
+                                        let ptr = _rt::alloc::alloc(layout5).cast::<u8>();
+                                        if ptr.is_null() {
+                                            _rt::alloc::handle_alloc_error(layout5);
+                                        }
+                                        ptr
+                                    } else {
+                                        ::core::ptr::null_mut()
+                                    };
+                                    for (i, e) in vec5.into_iter().enumerate() {
+                                        let base = result5
+                                            .add(i * (4 * ::core::mem::size_of::<*const u8>()));
+                                        {
+                                            let CsqValue { key: key2, value: value2 } = e;
+                                            let vec3 = (key2.into_bytes()).into_boxed_slice();
+                                            let ptr3 = vec3.as_ptr().cast::<u8>();
+                                            let len3 = vec3.len();
+                                            ::core::mem::forget(vec3);
+                                            *base
+                                                .add(::core::mem::size_of::<*const u8>())
+                                                .cast::<usize>() = len3;
+                                            *base.add(0).cast::<*mut u8>() = ptr3.cast_mut();
+                                            let vec4 = (value2.into_bytes()).into_boxed_slice();
+                                            let ptr4 = vec4.as_ptr().cast::<u8>();
+                                            let len4 = vec4.len();
+                                            ::core::mem::forget(vec4);
+                                            *base
+                                                .add(3 * ::core::mem::size_of::<*const u8>())
+                                                .cast::<usize>() = len4;
+                                            *base
+                                                .add(2 * ::core::mem::size_of::<*const u8>())
+                                                .cast::<*mut u8>() = ptr4.cast_mut();
+                                        }
+                                    }
                                     *base
                                         .add(::core::mem::size_of::<*const u8>())
-                                        .cast::<usize>() = len3;
-                                    *base.add(0).cast::<*mut u8>() = ptr3.cast_mut();
-                                    let vec4 = (value2.into_bytes()).into_boxed_slice();
-                                    let ptr4 = vec4.as_ptr().cast::<u8>();
-                                    let len4 = vec4.len();
-                                    ::core::mem::forget(vec4);
-                                    *base
-                                        .add(3 * ::core::mem::size_of::<*const u8>())
-                                        .cast::<usize>() = len4;
-                                    *base
-                                        .add(2 * ::core::mem::size_of::<*const u8>())
-                                        .cast::<*mut u8>() = ptr4.cast_mut();
+                                        .cast::<usize>() = len5;
+                                    *base.add(0).cast::<*mut u8>() = result5;
                                 }
                             }
                             *ptr1
                                 .add(2 * ::core::mem::size_of::<*const u8>())
-                                .cast::<usize>() = len5;
+                                .cast::<usize>() = len6;
                             *ptr1
                                 .add(::core::mem::size_of::<*const u8>())
-                                .cast::<*mut u8>() = result5;
+                                .cast::<*mut u8>() = result6;
                         }
                         Err(e) => {
                             *ptr1.add(0).cast::<u8>() = (1i32) as u8;
@@ -494,29 +518,46 @@ pub mod exports {
                             let l2 = *arg0
                                 .add(2 * ::core::mem::size_of::<*const u8>())
                                 .cast::<usize>();
-                            let base7 = l1;
-                            let len7 = l2;
-                            for i in 0..len7 {
-                                let base = base7
-                                    .add(i * (4 * ::core::mem::size_of::<*const u8>()));
+                            let base10 = l1;
+                            let len10 = l2;
+                            for i in 0..len10 {
+                                let base = base10
+                                    .add(i * (2 * ::core::mem::size_of::<*const u8>()));
                                 {
                                     let l3 = *base.add(0).cast::<*mut u8>();
                                     let l4 = *base
                                         .add(::core::mem::size_of::<*const u8>())
                                         .cast::<usize>();
-                                    _rt::cabi_dealloc(l3, l4, 1);
-                                    let l5 = *base
-                                        .add(2 * ::core::mem::size_of::<*const u8>())
-                                        .cast::<*mut u8>();
-                                    let l6 = *base
-                                        .add(3 * ::core::mem::size_of::<*const u8>())
-                                        .cast::<usize>();
-                                    _rt::cabi_dealloc(l5, l6, 1);
+                                    let base9 = l3;
+                                    let len9 = l4;
+                                    for i in 0..len9 {
+                                        let base = base9
+                                            .add(i * (4 * ::core::mem::size_of::<*const u8>()));
+                                        {
+                                            let l5 = *base.add(0).cast::<*mut u8>();
+                                            let l6 = *base
+                                                .add(::core::mem::size_of::<*const u8>())
+                                                .cast::<usize>();
+                                            _rt::cabi_dealloc(l5, l6, 1);
+                                            let l7 = *base
+                                                .add(2 * ::core::mem::size_of::<*const u8>())
+                                                .cast::<*mut u8>();
+                                            let l8 = *base
+                                                .add(3 * ::core::mem::size_of::<*const u8>())
+                                                .cast::<usize>();
+                                            _rt::cabi_dealloc(l7, l8, 1);
+                                        }
+                                    }
+                                    _rt::cabi_dealloc(
+                                        base9,
+                                        len9 * (4 * ::core::mem::size_of::<*const u8>()),
+                                        ::core::mem::size_of::<*const u8>(),
+                                    );
                                 }
                             }
                             _rt::cabi_dealloc(
-                                base7,
-                                len7 * (4 * ::core::mem::size_of::<*const u8>()),
+                                base10,
+                                len10 * (2 * ::core::mem::size_of::<*const u8>()),
                                 ::core::mem::size_of::<*const u8>(),
                             );
                         }
@@ -599,9 +640,9 @@ pub mod exports {
                     }
                     fn new() -> Self;
                     fn list_variants(&self) -> _rt::Vec<_rt::String>;
-                    fn get_csq_headings(&self, index: u32) -> _rt::Vec<_rt::String>;
+                    fn get_csq_headings(&self) -> _rt::Vec<_rt::String>;
                     fn does_record_have_csq(&self, index: u32) -> Option<bool>;
-                    fn get_csq(&self, index: u32) -> Result<Csq, VepVcfErrors>;
+                    fn get_csq(&self, index: u32) -> Result<_rt::Vec<Csq>, VepVcfErrors>;
                     fn read(&self, line: _rt::String) -> Result<bool, VepVcfErrors>;
                 }
                 #[doc(hidden)]
@@ -628,9 +669,9 @@ pub mod exports {
                         (export_name =
                         "component:vepvcf/glue#[method]vcfvep.get-csq-headings")] unsafe
                         extern "C" fn export_method_vcfvep_get_csq_headings(arg0 : * mut
-                        u8, arg1 : i32,) -> * mut u8 { unsafe { $($path_to_types)*::
+                        u8,) -> * mut u8 { unsafe { $($path_to_types)*::
                         _export_method_vcfvep_get_csq_headings_cabi::<<$ty as
-                        $($path_to_types)*:: Guest >::Vcfvep > (arg0, arg1) } } #[unsafe
+                        $($path_to_types)*:: Guest >::Vcfvep > (arg0) } } #[unsafe
                         (export_name =
                         "cabi_post_component:vepvcf/glue#[method]vcfvep.get-csq-headings")]
                         unsafe extern "C" fn
@@ -821,22 +862,21 @@ pub(crate) use __export_vepvcf_impl as export;
 )]
 #[doc(hidden)]
 #[allow(clippy::octal_escapes)]
-pub static __WIT_BINDGEN_COMPONENT_TYPE: [u8; 711] = *b"\
-\0asm\x0d\0\x01\0\0\x19\x16wit-component-encoding\x04\0\x07\xca\x04\x01A\x02\x01\
+pub static __WIT_BINDGEN_COMPONENT_TYPE: [u8; 696] = *b"\
+\0asm\x0d\0\x01\0\0\x19\x16wit-component-encoding\x04\0\x07\xbb\x04\x01A\x02\x01\
 A\x02\x01B\x19\x01r\x02\x03keys\x05values\x04\0\x09csq-value\x03\0\0\x01p\x01\x04\
 \0\x03csq\x03\0\x02\x01m\x08\x18variantfoundbeforeheader\x19variantfountbeforesa\
 mples\x12unabletogetcsqcols\x11unabletoaddrecord\x17unabletoparseheaderline\x14u\
 nabletoaccessheader\x0aoutofrange\x07noerror\x04\0\x0evep-vcf-errors\x03\0\x04\x04\
 \0\x06vcfvep\x03\x01\x01i\x06\x01@\0\0\x07\x04\0\x13[constructor]vcfvep\x01\x08\x01\
 h\x06\x01ps\x01@\x01\x04self\x09\0\x0a\x04\0\x1c[method]vcfvep.list-variants\x01\
-\x0b\x01@\x02\x04self\x09\x05indexy\0\x0a\x04\0\x1f[method]vcfvep.get-csq-headin\
-gs\x01\x0c\x01k\x7f\x01@\x02\x04self\x09\x05indexy\0\x0d\x04\0#[method]vcfvep.do\
-es-record-have-csq\x01\x0e\x01j\x01\x03\x01\x05\x01@\x02\x04self\x09\x05indexy\0\
-\x0f\x04\0\x16[method]vcfvep.get-csq\x01\x10\x01j\x01\x7f\x01\x05\x01@\x02\x04se\
-lf\x09\x04lines\0\x11\x04\0\x13[method]vcfvep.read\x01\x12\x04\0\x15component:ve\
-pvcf/glue\x05\0\x04\0\x17component:vepvcf/vepvcf\x04\0\x0b\x0c\x01\0\x06vepvcf\x03\
-\0\0\0G\x09producers\x01\x0cprocessed-by\x02\x0dwit-component\x070.227.1\x10wit-\
-bindgen-rust\x060.41.0";
+\x0b\x04\0\x1f[method]vcfvep.get-csq-headings\x01\x0b\x01k\x7f\x01@\x02\x04self\x09\
+\x05indexy\0\x0c\x04\0#[method]vcfvep.does-record-have-csq\x01\x0d\x01p\x03\x01j\
+\x01\x0e\x01\x05\x01@\x02\x04self\x09\x05indexy\0\x0f\x04\0\x16[method]vcfvep.ge\
+t-csq\x01\x10\x01j\x01\x7f\x01\x05\x01@\x02\x04self\x09\x04lines\0\x11\x04\0\x13\
+[method]vcfvep.read\x01\x12\x04\0\x15component:vepvcf/glue\x05\0\x04\0\x17compon\
+ent:vepvcf/vepvcf\x04\0\x0b\x0c\x01\0\x06vepvcf\x03\0\0\0G\x09producers\x01\x0cp\
+rocessed-by\x02\x0dwit-component\x070.227.1\x10wit-bindgen-rust\x060.41.0";
 #[inline(never)]
 #[doc(hidden)]
 pub fn __link_custom_section_describing_imports() {

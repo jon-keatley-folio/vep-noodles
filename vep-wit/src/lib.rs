@@ -1,16 +1,16 @@
 #[allow(warnings)]
 mod bindings;
 
-use std::borrow::BorrowMut;
+use std::cell::RefCell;
 
-use bindings::exports::component::vepvcf::glue::{GuestVcfvep, VepVcfErrors, Csq, CsqValue};
+use bindings::exports::component::vepvcf::glue::{Csq, CsqValue, Guest, GuestVcfvep, VepVcfErrors};
 
 
 pub use vep_core::{VEPVCF, VEPVCFErrors};
 
-struct Component
+struct VEPVCFWrapper
 {
-    vcf:VEPVCF,
+    cell:RefCell<VEPVCF>,
 }
 
 fn map_errors(err:VEPVCFErrors) -> VepVcfErrors
@@ -27,17 +27,25 @@ fn map_errors(err:VEPVCFErrors) -> VepVcfErrors
     }
 }
 
-impl GuestVcfvep for Component{
-    fn new() -> Component
+impl Guest for VEPVCFWrapper{
+    type Vcfvep = VEPVCFWrapper;
+}
+
+impl GuestVcfvep for VEPVCFWrapper{
+
+    
+    fn new() -> VEPVCFWrapper
     {
-        Component {
-            vcf: VEPVCF::new(),
+        let cell = RefCell::new(VEPVCF::new());
+        VEPVCFWrapper {
+            cell,
         }
     }
         
-    fn read(&mut self, line:String) -> Result<bool, VepVcfErrors>
+    fn read(&self, line:String) -> Result<bool, VepVcfErrors>
     {  
-        let result = self.vcf.read(&line);
+        let mut vcf = self.cell.borrow_mut();
+        let result = vcf.read(&line);
         
         match result
         {
@@ -51,25 +59,54 @@ impl GuestVcfvep for Component{
     
     fn list_variants(&self) -> Vec<String>
     {
-        vec![]
+        let vcf = self.cell.borrow();
+        vcf.list_variants()
     }
-    fn get_csq_headings(&self, index: u32) -> Vec<String>
+    
+    fn get_csq_headings(&self) -> Vec<String>
     {
-        vec![]
+        let vcf = self.cell.borrow();
+        vcf.get_csq_headings().iter().map(|h|String::from(*h)).collect()
     }
     
     fn does_record_have_csq(&self, index: u32) -> Option<bool>
     {
-        None
+        let vcf = self.cell.borrow();
+        vcf.does_record_have_csq(index as usize)
     }
     
-    fn get_csq(&self, index: u32) -> Result<Csq, VepVcfErrors>
+    fn get_csq(&self, index: u32) -> Result<Vec<Csq>, VepVcfErrors>
     {
-        Err(VepVcfErrors::Noerror)
+        let vcf = self.cell.borrow();
+        let csq_result = vcf.get_csq(index as usize);
+        
+        match csq_result
+        {
+            Ok(csq) =>
+            {
+                let mut result:Vec<Csq> = Vec::new();
+                
+                for row in csq
+                {
+                    let r:Csq = row.iter()
+                        .map(|c| CsqValue { key:c.0.clone(), value:c.1.clone() })
+                        .collect();
+                    result.push(r);
+                }
+
+                Ok(result)
+            },
+            Err(e) =>
+            {
+                Err(map_errors(e))
+            }
+        }
     }
     
     
 }
+
+bindings::export!(VEPVCFWrapper with_types_in bindings);
 
 
 

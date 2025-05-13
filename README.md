@@ -3,7 +3,10 @@ A set of WASM wrappers for a VEP tool. The purpose is to show how portable WASM 
 
 ## No noodle!
 
-noodle-vcf uses VCFc4.3 so we had to switch to vcf which not as nice as noodles but is more permissive
+Could not figure out file reading by line. Need to come back to this
+
+## WIT
+No `&mut self` for wit-bindgen :(
 
 ## Features
 

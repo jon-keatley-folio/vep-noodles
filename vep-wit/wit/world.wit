@@ -24,10 +24,10 @@ interface glue
     resource vcfvep {
         constructor();
         list-variants: func() -> list<string>;
-        get-csq-headings: func(index: u32) -> list<string>;
+        get-csq-headings: func() -> list<string>;
         does-record-have-csq: func(index: u32) -> option<bool>;
-        get-csq: func(index: u32) -> result<csq,vep-vcf-errors>;
-        read: func(self: &mut self, line: string) -> result<bool,vep-vcf-errors>;
+        get-csq: func(index: u32) -> result<list<csq>,vep-vcf-errors>;
+        read: func(line: string) -> result<bool,vep-vcf-errors>;
     }
 }
     
