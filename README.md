@@ -6,7 +6,8 @@ A set of WASM wrappers for a VEP tool. The purpose is to show how portable WASM 
 Could not figure out file reading by line. Need to come back to this
 
 ## WIT
-No `&mut self` for wit-bindgen :(
+- No `&mut self` for wit-bindgen :(
+- More un witty things - https://github.com/bytecodealliance/wasmtime-py/issues/246
 
 ## Features
 

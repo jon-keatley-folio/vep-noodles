@@ -31,9 +31,46 @@ impl Guest for VEPVCFWrapper{
     type Vcfvep = VEPVCFWrapper;
 }
 
-impl GuestVcfvep for VEPVCFWrapper{
-
+/*impl GuestVcfvep for VEPVCFWrapper
+{
+    fn new() -> VEPVCFWrapper
+    {
+        //let cell = RefCell::new(VEPVCF::new());
+        VEPVCFWrapper {
+           // cell,
+        }
+    }
+        
+    fn read(&self, line:String) -> Result<bool, VepVcfErrors>
+    {  
+        Ok(false)
+    }
     
+    fn list_variants(&self) -> Vec<String>
+    {
+        vec![]
+    }
+    
+    fn get_csq_headings(&self) -> Vec<String>
+    {
+        vec![]
+    }
+    
+    fn does_record_have_csq(&self, index: u32) -> Option<bool>
+    {
+        None
+    }
+    
+    fn get_csq(&self, index: u32) -> Result<Vec<Csq>, VepVcfErrors>
+    {
+        Err(VepVcfErrors::Noerror)
+    }
+    
+    
+}*/
+
+impl GuestVcfvep for VEPVCFWrapper
+{
     fn new() -> VEPVCFWrapper
     {
         let cell = RefCell::new(VEPVCF::new());
