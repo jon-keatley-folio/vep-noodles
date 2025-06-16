@@ -1,0 +1,1 @@
+cp  ../add/target/wasm32-wasip2/release/add.wasm .

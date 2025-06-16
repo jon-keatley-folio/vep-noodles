@@ -1,0 +1,1 @@
+cp  ../vep-wit/target/wasm32-wasip2/debug/vep_wit.wasm vepwit.wasm
